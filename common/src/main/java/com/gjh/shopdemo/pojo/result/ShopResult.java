@@ -1,6 +1,6 @@
 package com.gjh.shopdemo.pojo.result;
 
-import com.gjh.shopdemo.enums.ResultEnum;
+import com.gjh.shopdemo.pojo.enums.ResultEnum;
 import lombok.Data;
 
 /**
