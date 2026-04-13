@@ -1,6 +1,6 @@
 spring:
   application:
-    name: user-auth
+    name: user-auth-service
 
 server:
   port: 8081
