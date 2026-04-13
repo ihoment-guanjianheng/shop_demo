@@ -13,6 +13,7 @@ public class ShopResult<T> {
     private Integer code;
     private String msg;
     private T data;
+    private String traceId;
 
     public ShopResult(T data, ResultEnum resultEnum){
         this.code = resultEnum.getCode();
@@ -31,6 +32,10 @@ public class ShopResult<T> {
         return new ShopResult<>(data, ResultEnum.SUCCESS);
     }
 
+    public static <T> ShopResult<T> success(){
+        return new ShopResult<>(null, ResultEnum.SUCCESS);
+    }
+
     public static <T> ShopResult<T> fail(T data){
         return new ShopResult<>(data, ResultEnum.FAIL);
     }
@@ -41,5 +46,9 @@ public class ShopResult<T> {
 
     public static <T> ShopResult<T> fail(Integer code, String msg){
         return new ShopResult<>(null, msg, code);
+    }
+
+    public static <T> ShopResult<T> fail(){
+        return new ShopResult<>(null, ResultEnum.FAIL);
     }
 }

@@ -21,6 +21,7 @@
 
     <modules>
         <module>com.gjh.shopdemo.order.rest</module>
+        <module>com.gjh.shopdemo.order.client</module>
     </modules>
 
     <dependencies>
