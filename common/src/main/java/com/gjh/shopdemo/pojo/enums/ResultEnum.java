@@ -1,4 +1,4 @@
-package com.gjh.shopdemo.enums;
+package com.gjh.shopdemo.pojo.enums;
 
 import lombok.Getter;
 
