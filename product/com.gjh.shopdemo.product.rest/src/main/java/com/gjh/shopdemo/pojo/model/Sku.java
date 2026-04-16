@@ -23,6 +23,7 @@ public class Sku implements Serializable {
     private BigDecimal price;
     private Integer stock;
     private Integer lockStock;
+    private String image;
     private Integer status;
 
     @TableField(fill = FieldFill.INSERT)
