@@ -7,14 +7,14 @@ import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.exception.ZuulException;
-import io.micrometer.core.instrument.util.JsonUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
 
 @Component
+@Slf4j
 public class ErrorFilter extends ZuulFilter {
 
     @Value("${zuul.filter.error}")
@@ -42,7 +42,7 @@ public class ErrorFilter extends ZuulFilter {
 
         // 如果前面有异常，可以打印日志
         if (throwable != null) {
-            // log.error("Zuul routing error", throwable);
+             log.error("Zuul routing error", throwable);
         }
 
         // 关键：手动构造响应，避免继续执行后续可能出错的逻辑
