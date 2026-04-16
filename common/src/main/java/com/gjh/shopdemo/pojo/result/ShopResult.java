@@ -3,6 +3,7 @@ package com.gjh.shopdemo.pojo.result;
 import com.gjh.shopdemo.pojo.enums.ResultEnum;
 import com.gjh.shopdemo.pojo.exception.BaseException;
 import lombok.Data;
+import org.slf4j.MDC;
 
 /**
  * 统一返回结果
@@ -20,12 +21,14 @@ public class ShopResult<T> {
         this.code = resultEnum.getCode();
         this.msg = resultEnum.getMessage();
         this.data = data;
+        this.traceId = MDC.get("traceId");
     }
 
     public ShopResult(T data,String msg,Integer code){
         this.code = code;
         this.msg = msg;
         this.data = data;
+        this.traceId = MDC.get("traceId");
     }
 
 

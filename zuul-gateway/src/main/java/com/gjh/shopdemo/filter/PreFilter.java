@@ -38,8 +38,9 @@ public class PreFilter extends ZuulFilter {
     @Override
     public Object run() throws ZuulException {
         RequestContext ctx = RequestContext.getCurrentContext();
-        ctx.addZuulRequestHeader(X_TRACE_ID, UUIDUtils.getUUID());
-        MDC.put(TRACE_ID, UUIDUtils.getUUID());
+        String uuid = UUIDUtils.getUUID();
+        ctx.addZuulRequestHeader(X_TRACE_ID, uuid);
+        MDC.put(TRACE_ID, uuid);
         String pathInfo = ctx.getRequest().getRequestURI();
         log.info("调用接口路径：{}", pathInfo);
         return null;

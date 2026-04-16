@@ -42,7 +42,7 @@ public class ErrorFilter extends ZuulFilter {
 
         // 如果前面有异常，可以打印日志
         if (throwable != null) {
-             log.error("Zuul routing error", throwable);
+            log.error("Zuul routing error", throwable);
         }
 
         // 关键：手动构造响应，避免继续执行后续可能出错的逻辑
