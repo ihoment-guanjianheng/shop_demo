@@ -1,6 +1,7 @@
 package com.gjh.shopdemo.pojo.result;
 
 import com.gjh.shopdemo.pojo.enums.ResultEnum;
+import com.gjh.shopdemo.pojo.exception.BaseException;
 import lombok.Data;
 
 /**
@@ -50,5 +51,9 @@ public class ShopResult<T> {
 
     public static <T> ShopResult<T> fail(){
         return new ShopResult<>(null, ResultEnum.FAIL);
+    }
+
+    public static <T> ShopResult<T> fail(BaseException e){
+        return new ShopResult<>(null, e.getMessage(), ResultEnum.FAIL.getCode());
     }
 }

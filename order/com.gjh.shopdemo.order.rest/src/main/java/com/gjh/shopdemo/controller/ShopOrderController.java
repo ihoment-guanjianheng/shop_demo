@@ -1,5 +1,6 @@
 package com.gjh.shopdemo.controller;
 
+import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.service.ShopOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +18,7 @@ public class ShopOrderController {
     private ShopOrderService shopOrderService;
 
     @GetMapping("/testNacos")
-    public ShopResult<String> testNacos() throws InterruptedException {
-        sleep(24000);
+    public ShopResult<String> testNacos() {
         return ShopResult.success(shopOrderService.testNacos());
     }
 }

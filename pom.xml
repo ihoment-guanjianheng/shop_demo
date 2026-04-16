@@ -37,7 +37,6 @@
         <module>product</module>
         <module>order</module>
         <module>common</module>
-        <module>product/com.gjh.shopdemo.product.client</module>
     </modules>
 
     <dependencyManagement>

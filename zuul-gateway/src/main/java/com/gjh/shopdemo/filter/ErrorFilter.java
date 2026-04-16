@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 public class ErrorFilter extends ZuulFilter {
 
     @Value("${zuul.filter.error}")
-    private Boolean able;
+    private Boolean enabled;
 
     @Override
     public String filterType() {
@@ -32,7 +32,7 @@ public class ErrorFilter extends ZuulFilter {
 
     @Override
     public boolean shouldFilter() {
-        return able;
+        return enabled;
     }
 
     @Override

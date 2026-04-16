@@ -20,6 +20,7 @@
 
     <modules>
         <module>com.gjh.shopdemo.product.rest</module>
+        <module>com.gjh.shopdemo.product.client</module>
     </modules>
 
     <dependencies>
