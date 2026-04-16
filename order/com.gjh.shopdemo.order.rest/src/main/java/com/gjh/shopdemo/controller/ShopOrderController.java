@@ -7,15 +7,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static java.lang.Thread.sleep;
+
 @RestController
-@RequestMapping("/api/shopOrder")
+@RequestMapping("/shopOrder")
 public class ShopOrderController {
 
     @Autowired
     private ShopOrderService shopOrderService;
 
     @GetMapping("/testNacos")
-    public ShopResult<String> testNacos() {
+    public ShopResult<String> testNacos() throws InterruptedException {
+        sleep(24000);
         return ShopResult.success(shopOrderService.testNacos());
     }
 }
