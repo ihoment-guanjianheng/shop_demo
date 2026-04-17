@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/api/sku")
+@RequestMapping("/sku")
 public class SkuController {
 
     @Autowired
