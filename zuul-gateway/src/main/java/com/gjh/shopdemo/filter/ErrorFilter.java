@@ -49,7 +49,7 @@ public class ErrorFilter extends ZuulFilter {
         ctx.setSendZuulResponse(false);
         ctx.setResponseStatusCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         ctx.getResponse().setContentType("application/json;charset=UTF-8");
-        ctx.setResponseBody(JacksonUtils.toJson(ShopResult.fail(ResultEnum.SERVICE_NOT_ACCESS)));
+        ctx.setResponseBody(JacksonUtils.toJson(ShopResult.fail(ResultEnum.SYSTEM_ERROR)));
         // 清除异常标记，防止某些版本下 POST filter 再次处理时报错
         ctx.remove("throwable");
 

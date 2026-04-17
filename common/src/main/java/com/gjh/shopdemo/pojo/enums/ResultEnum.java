@@ -10,7 +10,7 @@ import lombok.Getter;
 public enum ResultEnum {
     SUCCESS(1, "成功"),
     FAIL(0, "失败"),
-    SERVICE_NOT_ACCESS(2, "服务不可达");
+    SYSTEM_ERROR(2, "系统错误，请稍后重试");
 
     private Integer code;
     private String message;
