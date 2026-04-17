@@ -28,9 +28,11 @@ public class TokenFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         String userId = req.getHeader(X_USER_ID_HEADER);
-        String key = RedisConstant.TOKEN_PREFIX + userId;
-        UserInfoVO userInfo = (UserInfoVO) redisTemplate.opsForValue().get(key);
-        AuthContext.setCurrentUser(userInfo);
+        if (userId != null && !userId.isEmpty()) {
+            String key = RedisConstant.TOKEN_PREFIX + userId;
+            UserInfoVO userInfo = (UserInfoVO) redisTemplate.opsForValue().get(key);
+            AuthContext.setCurrentUser(userInfo);
+        }
         try {
             chain.doFilter(request, response);
         } finally {
