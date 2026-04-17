@@ -3,7 +3,6 @@ package com.gjh.shopdemo.controller;
 import com.gjh.shopdemo.pojo.dto.UserLoginDTO;
 import com.gjh.shopdemo.pojo.dto.UserRegisterDTO;
 import com.gjh.shopdemo.pojo.result.ShopResult;
-import com.gjh.shopdemo.pojo.vo.UserInfoVO;
 import com.gjh.shopdemo.pojo.vo.UserVO;
 import com.gjh.shopdemo.service.UserService;
 import com.gjh.shopdemo.userauth.client.remote.UserFeignRemote;

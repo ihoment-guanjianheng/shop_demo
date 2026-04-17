@@ -12,8 +12,8 @@ public enum ResultEnum {
     FAIL(0, "失败"),
     SYSTEM_ERROR(2, "系统错误，请稍后重试");
 
-    private Integer code;
-    private String message;
+    private final Integer code;
+    private final String message;
 
     ResultEnum(Integer code, String message) {
         this.code = code;
