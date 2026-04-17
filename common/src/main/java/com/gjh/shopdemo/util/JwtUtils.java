@@ -8,8 +8,12 @@ import java.util.Date;
 
 public class JwtUtils {
 
-    private static final String SECRET = "shop_demo_secret_key_2026";
+    private static String SECRET = "shop_demo_secret_key_2026";
     private static final long EXPIRATION = 86400000; // 24 hours
+
+    public static void setSecret(String secret) {
+        JwtUtils.SECRET = secret;
+    }
 
     public static String generateToken(Long userId) {
         Date now = new Date();

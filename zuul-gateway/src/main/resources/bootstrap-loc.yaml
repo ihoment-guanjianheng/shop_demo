@@ -12,3 +12,6 @@ spring:
         file-extension: yaml
         username: nacos
         password: nacos
+        shared-configs:
+          - data-id: shop-common.yaml
+            refresh: true
