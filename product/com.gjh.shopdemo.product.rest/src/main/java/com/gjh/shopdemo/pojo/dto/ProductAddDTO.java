@@ -1,4 +1,4 @@
-package com.gjh.shopdemo.pojo.request;
+package com.gjh.shopdemo.pojo.dto;
 
 import lombok.Data;
 
@@ -7,7 +7,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 @Data
-public class ProductAddRequest {
+public class ProductAddDTO {
 
     @NotBlank(message = "商品编码不能为空")
     @Size(max = 64, message = "商品编码长度不能超过64")

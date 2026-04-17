@@ -1,6 +1,6 @@
 package com.gjh.shopdemo.controller;
 
-import com.gjh.shopdemo.pojo.request.ProductAddRequest;
+import com.gjh.shopdemo.pojo.dto.ProductAddDTO;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +19,8 @@ public class ProductController {
     private ProductService productService;
 
     @PostMapping("/add")
-    public ShopResult<Void> add(@Valid @RequestBody ProductAddRequest request) {
-        productService.addProduct(request);
+    public ShopResult<Void> add(@Valid @RequestBody ProductAddDTO dto) {
+        productService.addProduct(dto);
         return ShopResult.success();
     }
 }

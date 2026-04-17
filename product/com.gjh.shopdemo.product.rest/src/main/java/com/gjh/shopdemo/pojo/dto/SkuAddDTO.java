@@ -1,4 +1,4 @@
-package com.gjh.shopdemo.pojo.request;
+package com.gjh.shopdemo.pojo.dto;
 
 import lombok.Data;
 
@@ -10,7 +10,7 @@ import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 
 @Data
-public class SkuAddRequest {
+public class SkuAddDTO {
 
     @NotNull(message = "商品ID不能为空")
     private Long productId;

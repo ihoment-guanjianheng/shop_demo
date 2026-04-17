@@ -1,6 +1,6 @@
 package com.gjh.shopdemo.controller;
 
-import com.gjh.shopdemo.pojo.request.SkuAddRequest;
+import com.gjh.shopdemo.pojo.dto.SkuAddDTO;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.service.SkuService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +19,8 @@ public class SkuController {
     private SkuService skuService;
 
     @PostMapping("/add")
-    public ShopResult<Void> add(@Valid @RequestBody SkuAddRequest request) {
-        skuService.addSku(request);
+    public ShopResult<Void> add(@Valid @RequestBody SkuAddDTO dto) {
+        skuService.addSku(dto);
         return ShopResult.success();
     }
 }
