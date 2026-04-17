@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/paymentRecord")
+@RequestMapping("/paymentRecord")
 public class PaymentRecordController {
 
     @Autowired

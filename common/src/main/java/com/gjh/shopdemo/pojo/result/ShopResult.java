@@ -40,8 +40,8 @@ public class ShopResult<T> {
         return new ShopResult<>(null, ResultEnum.SUCCESS);
     }
 
-    public static <T> ShopResult<T> fail(T data){
-        return new ShopResult<>(data, ResultEnum.FAIL);
+    public static <T> ShopResult<T> fail(String msg){
+        return new ShopResult<>(null, msg, ResultEnum.FAIL.getCode());
     }
 
     public static <T> ShopResult<T> fail(ResultEnum resultEnum){
