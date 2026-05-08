@@ -1,16 +1,48 @@
 package com.gjh.shopdemo.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.gjh.shopdemo.constant.RedisConstant;
 import com.gjh.shopdemo.mapper.ProductMapper;
-import com.gjh.shopdemo.pojo.model.Product;
 import com.gjh.shopdemo.pojo.dto.ProductAddDTO;
+import com.gjh.shopdemo.pojo.dto.ProductPageQueryDTO;
+import com.gjh.shopdemo.pojo.dto.ProductUpdateDTO;
+import com.gjh.shopdemo.pojo.exception.BaseException;
+import com.gjh.shopdemo.pojo.model.Product;
+import com.gjh.shopdemo.pojo.model.Sku;
+import com.gjh.shopdemo.pojo.vo.ProductDetailVO;
 import com.gjh.shopdemo.service.ProductService;
+import com.gjh.shopdemo.service.SkuService;
+import com.gjh.shopdemo.util.RedisCacheUtils;
+import org.apache.commons.lang3.RandomUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 @Service
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
+
+    @Autowired
+    private SkuService skuService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Value("${product.cache.TTL}")
+    private Long cacheTTL;
+
+    @Autowired
+    private RedisCacheUtils redisCacheUtils;
+
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -18,5 +50,84 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         Product product = new Product();
         BeanUtils.copyProperties(dto, product);
         baseMapper.insert(product);
+    }
+
+    @Override
+    public IPage<Product> pageQuery(ProductPageQueryDTO dto) {
+        LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(StringUtils.isNotBlank(dto.getProductName()), Product::getProductName, dto.getProductName())
+                .eq(dto.getStatus() != null, Product::getStatus, dto.getStatus())
+                .orderByDesc(Product::getCreateTime);
+        return page(new Page<>(dto.getCurrent(), dto.getSize()), wrapper);
+    }
+
+    @Override
+    public ProductDetailVO detail(Long id) {
+        String key = RedisConstant.PRODUCT_DETAIL_KEY + id;
+        // 缓存有效期随机加一些时间，防止缓存雪崩
+        long ttl = cacheTTL + RandomUtils.nextLong(0, 60);
+        ProductDetailVO vo = (ProductDetailVO) redisTemplate.opsForValue().get(key);
+        if (vo != null) {
+            // 缓存存在，更新缓存有效期，防止缓存击穿
+            redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
+            return vo;
+        }
+        Product product = baseMapper.selectById(id);
+        if (product == null) {
+            // 商品不存在，设置缓存为空，防止内存穿透
+            redisTemplate.opsForValue().set(key, null, ttl, TimeUnit.SECONDS);
+            throw new BaseException("商品不存在");
+        }
+        vo = new ProductDetailVO();
+        BeanUtils.copyProperties(product, vo);
+
+        LambdaQueryWrapper<Sku> skuWrapper = new LambdaQueryWrapper<>();
+        skuWrapper.eq(Sku::getProductId, id).orderByAsc(Sku::getId);
+        List<Sku> skuList = skuService.list(skuWrapper);
+        vo.setSkuList(skuList);
+        redisTemplate.opsForValue().set(key, vo, ttl, TimeUnit.SECONDS);
+        return vo;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void updateStatus(Long id, Integer status) {
+        Product product = baseMapper.selectById(id);
+        if (product == null) {
+            throw new BaseException("商品不存在");
+        }
+        Product update = new Product();
+        update.setId(id);
+        update.setStatus(status);
+        baseMapper.updateById(update);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void updateProduct(ProductUpdateDTO dto) {
+        Product product = baseMapper.selectById(dto.getId());
+        if (product == null) {
+            throw new BaseException("商品不存在");
+        }
+        Product update = new Product();
+        update.setId(dto.getId());
+        if (dto.getProductCode() != null) {
+            update.setProductCode(dto.getProductCode());
+        }
+        if (dto.getProductName() != null) {
+            update.setProductName(dto.getProductName());
+        }
+        if (dto.getDescription() != null) {
+            update.setDescription(dto.getDescription());
+        }
+        if (dto.getMainImage() != null) {
+            update.setMainImage(dto.getMainImage());
+        }
+        if (dto.getStatus() != null) {
+            update.setStatus(dto.getStatus());
+        }
+        baseMapper.updateById(update);
+        redisCacheUtils.delayDoubleDelete(RedisConstant.PRODUCT_DETAIL_KEY + product.getId());
+
     }
 }
