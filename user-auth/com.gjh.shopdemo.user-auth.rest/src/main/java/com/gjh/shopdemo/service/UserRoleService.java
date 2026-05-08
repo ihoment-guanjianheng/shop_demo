@@ -4,4 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.gjh.shopdemo.pojo.model.UserRole;
 
 public interface UserRoleService extends IService<UserRole> {
+
+    void assignRole(Long userId, Long roleId);
+
+    void removeUserRole(Long id);
 }

@@ -9,6 +9,7 @@ import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.model.User;
 import com.gjh.shopdemo.pojo.vo.UserInfoVO;
 import com.gjh.shopdemo.pojo.vo.UserVO;
+import com.gjh.shopdemo.service.PermissionCacheService;
 import com.gjh.shopdemo.service.UserService;
 import com.gjh.shopdemo.util.JwtUtils;
 import io.jsonwebtoken.Claims;
@@ -32,6 +33,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private PermissionCacheService permissionCacheService;
 
     private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
 
@@ -67,18 +71,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         BeanUtils.copyProperties(user, userInfoVO);
         String key = RedisConstant.TOKEN_PREFIX + user.getId();
         redisTemplate.opsForValue().set(key, userInfoVO, RedisConstant.TOKEN_EXPIRE_TIME, TimeUnit.SECONDS);
+        permissionCacheService.loadAndCache(user.getId());
         return vo;
     }
 
     @Override
     public void logout(String token) {
         try {
+            Long userId = JwtUtils.getUserId(token);
             Claims claims = JwtUtils.parseToken(token);
             Date expiration = claims.getExpiration();
             long ttlSeconds = (expiration.getTime() - System.currentTimeMillis()) / 1000;
             if (ttlSeconds > 0) {
                 stringRedisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + token, "1", ttlSeconds, TimeUnit.SECONDS);
             }
+            permissionCacheService.invalidateUser(userId);
+            redisTemplate.delete(RedisConstant.TOKEN_PREFIX + userId);
         } catch (Exception e) {
             // 如果 token 本身已无法解析，无需加入黑名单，直接视为无效即可
             throw new BaseException("无效的认证令牌");

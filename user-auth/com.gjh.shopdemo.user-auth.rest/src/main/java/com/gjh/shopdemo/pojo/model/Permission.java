@@ -17,6 +17,8 @@ public class Permission implements Serializable {
 
     private String permissionName;
     private String permissionCode;
+    private String serviceName;
+    private String requestPath;
     private String resourceType;
     private Long parentId;
     private Integer sortOrder;
