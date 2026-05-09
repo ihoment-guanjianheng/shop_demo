@@ -42,3 +42,4 @@ build/
 docs
 CLAUDE.md
 logs
+.claude
