@@ -13,21 +13,18 @@ import com.gjh.shopdemo.pojo.dto.SkuUpdateDTO;
 import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.model.Product;
 import com.gjh.shopdemo.pojo.model.Sku;
-import com.gjh.shopdemo.product.client.remote.pojo.dto.SkuStockDTO;
+import com.gjh.shopdemo.product.client.remote.pojo.vo.SkuStockVO;
 import com.gjh.shopdemo.service.ProductService;
 import com.gjh.shopdemo.service.SkuService;
 import com.gjh.shopdemo.util.RedisCacheUtils;
-import com.gjh.shopdemo.util.RedisLockUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class SkuServiceImpl extends ServiceImpl<SkuMapper, Sku> implements SkuService {
@@ -36,13 +33,7 @@ public class SkuServiceImpl extends ServiceImpl<SkuMapper, Sku> implements SkuSe
     private ProductService productService;
 
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
-
-    @Autowired
     private StringRedisTemplate stringRedisTemplate;
-
-    @Autowired
-    private RedisLockUtils redisLockUtils;
 
     @Autowired
     private RedisCacheUtils redisCacheUtils;
@@ -147,15 +138,15 @@ public class SkuServiceImpl extends ServiceImpl<SkuMapper, Sku> implements SkuSe
     }
 
     @Override
-    public SkuStockDTO getStockById(Long id) {
+    public SkuStockVO getStockById(Long id) {
         Sku sku = baseMapper.selectById(id);
         if (sku == null) {
             throw new BaseException("SKU不存在");
         }
-        SkuStockDTO skuStockDTO = new SkuStockDTO();
-        skuStockDTO.setStock(sku.getStock());
-        skuStockDTO.setId(sku.getId());
-        return skuStockDTO;
+        SkuStockVO skuStockVO = new SkuStockVO();
+        skuStockVO.setStock(sku.getStock());
+        skuStockVO.setId(sku.getId());
+        return skuStockVO;
     }
 
     @Transactional(rollbackFor = Exception.class)

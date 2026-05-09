@@ -8,7 +8,7 @@ import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.model.Sku;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.product.client.remote.SkuFeignRemote;
-import com.gjh.shopdemo.product.client.remote.pojo.dto.SkuStockDTO;
+import com.gjh.shopdemo.product.client.remote.pojo.vo.SkuStockVO;
 import com.gjh.shopdemo.service.SkuService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -82,7 +82,7 @@ public class SkuController implements SkuFeignRemote {
 
     @Override
     @GetMapping("/getStockById/{id}")
-    public ShopResult<SkuStockDTO> getStockById(Long id) {
+    public ShopResult<SkuStockVO> getStockById(Long id) {
         return ShopResult.success(skuService.getStockById(id));
     }
 

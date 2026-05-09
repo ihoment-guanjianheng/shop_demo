@@ -6,7 +6,7 @@ import com.gjh.shopdemo.pojo.dto.SkuAddDTO;
 import com.gjh.shopdemo.pojo.dto.SkuPageQueryDTO;
 import com.gjh.shopdemo.pojo.dto.SkuUpdateDTO;
 import com.gjh.shopdemo.pojo.model.Sku;
-import com.gjh.shopdemo.product.client.remote.pojo.dto.SkuStockDTO;
+import com.gjh.shopdemo.product.client.remote.pojo.vo.SkuStockVO;
 
 public interface SkuService extends IService<Sku> {
 
@@ -18,7 +18,7 @@ public interface SkuService extends IService<Sku> {
 
     void updateSku(SkuUpdateDTO dto);
 
-    SkuStockDTO getStockById(Long id);
+    SkuStockVO getStockById(Long id);
 
     void deductDbStock(Long id, Integer quantity);
 

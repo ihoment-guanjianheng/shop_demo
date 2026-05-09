@@ -3,7 +3,7 @@ package com.gjh.shopdemo.strategy;
 import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.product.client.remote.client.SkuFeignRemoteClient;
-import com.gjh.shopdemo.product.client.remote.pojo.dto.SkuStockDTO;
+import com.gjh.shopdemo.product.client.remote.pojo.vo.SkuStockVO;
 import com.gjh.shopdemo.util.RedisLockUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -100,7 +100,7 @@ public class ImmediateDeductStrategy implements StockStrategy {
                         return false;
                     }
 
-                    ShopResult<SkuStockDTO> shopResult = skuFeignClient.getStockById(skuId);
+                    ShopResult<SkuStockVO> shopResult = skuFeignClient.getStockById(skuId);
                     if (shopResult == null || shopResult.getData() == null || shopResult.getData().getStock() == null) {
                         return false;
                     }
