@@ -3,6 +3,7 @@ package com.gjh.shopdemo.pojo.result;
 import com.gjh.shopdemo.pojo.enums.ResultEnum;
 import com.gjh.shopdemo.pojo.exception.BaseException;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.slf4j.MDC;
 
 /**
@@ -11,6 +12,7 @@ import org.slf4j.MDC;
  */
 
 @Data
+@NoArgsConstructor
 public class ShopResult<T> {
     private Integer code;
     private String msg;

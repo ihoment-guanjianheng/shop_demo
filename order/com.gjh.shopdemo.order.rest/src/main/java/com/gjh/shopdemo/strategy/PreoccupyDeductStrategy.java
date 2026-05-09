@@ -1,7 +1,10 @@
 package com.gjh.shopdemo.strategy;
 
+import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.product.client.remote.client.SkuFeignRemoteClient;
+import com.gjh.shopdemo.product.client.remote.pojo.dto.SkuStockDTO;
+import com.gjh.shopdemo.util.RedisLockUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -9,6 +12,7 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 预占扣减策略：创建订单时预占库存，支付成功后异步确认扣减
@@ -23,6 +27,9 @@ public class PreoccupyDeductStrategy implements StockStrategy {
     @Autowired
     private SkuFeignRemoteClient skuFeignClient;
 
+    @Autowired
+    private RedisLockUtils redisLockUtils;
+
     private static final String STOCK_KEY_PREFIX = "stock:sku:";
     private static final String LOCK_KEY_PREFIX = "lock:stock:sku:";
 
@@ -30,14 +37,16 @@ public class PreoccupyDeductStrategy implements StockStrategy {
      * 预占库存 Lua 脚本
      * KEYS[1]: stockKey  KEYS[2]: lockKey
      * ARGV[1]: quantity
-     * 返回 1: 成功  -2: 库存不足
+     * 返回 1: 成功  -1: 库存未初始化  -2: 库存不足
      */
     private static final String PREOCCUPY_LUA =
             "local stockKey = KEYS[1] " +
             "local lockKey = KEYS[2] " +
             "local qty = tonumber(ARGV[1]) " +
-            "local stock = tonumber(redis.call('get', stockKey) or 0) " +
-            "if stock < qty then return -2 end " +
+            "local stock = redis.call('get', stockKey) " +
+            "if stock == false then return -1 end " +
+            "local current = tonumber(stock) " +
+            "if current < qty then return -2 end " +
             "redis.call('decrby', stockKey, qty) " +
             "redis.call('incrby', lockKey, qty) " +
             "return 1";
@@ -79,6 +88,57 @@ public class PreoccupyDeductStrategy implements StockStrategy {
                 Arrays.asList(stockKey, lockKey),
                 String.valueOf(quantity)
         );
+
+        if (result != null && result == -1) {
+            String initLockKey = "lock:stock:init:" + skuId;
+            boolean locked = redisLockUtils.tryLock(initLockKey, 10, TimeUnit.SECONDS);
+            if (locked) {
+                try {
+                    result = stringRedisTemplate.execute(
+                            new DefaultRedisScript<>(PREOCCUPY_LUA, Long.class),
+                            Arrays.asList(stockKey, lockKey),
+                            String.valueOf(quantity)
+                    );
+                    if (result != null && result == 1) {
+                        return true;
+                    }
+                    if (result != null && result == -2) {
+                        return false;
+                    }
+
+                    ShopResult<SkuStockDTO> shopResult = skuFeignClient.getStockById(skuId);
+                    if (shopResult == null || shopResult.getData() == null || shopResult.getData().getStock() == null) {
+                        return false;
+                    }
+                    stringRedisTemplate.opsForValue().set(stockKey, String.valueOf(shopResult.getData().getStock()));
+
+                    result = stringRedisTemplate.execute(
+                            new DefaultRedisScript<>(PREOCCUPY_LUA, Long.class),
+                            Arrays.asList(stockKey, lockKey),
+                            String.valueOf(quantity)
+                    );
+                    return result != null && result == 1;
+                } catch (Exception e) {
+                    throw new BaseException("库存扣减失败，请稍后重试");
+                }
+                finally {
+                    redisLockUtils.unlock(initLockKey);
+                }
+            } else {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                result = stringRedisTemplate.execute(
+                        new DefaultRedisScript<>(PREOCCUPY_LUA, Long.class),
+                        Arrays.asList(stockKey, lockKey),
+                        String.valueOf(quantity)
+                );
+                return result != null && result == 1;
+            }
+        }
+
         return result != null && result == 1;
     }
 
@@ -95,7 +155,7 @@ public class PreoccupyDeductStrategy implements StockStrategy {
         }
         // 异步扣减 DB 库存
         ShopResult<Void> dbResult = skuFeignClient.deductDbStock(skuId, quantity);
-        return dbResult != null && dbResult.getCode() == 200;
+        return dbResult != null && dbResult.getCode() == 1;
     }
 
     @Override

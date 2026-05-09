@@ -3,8 +3,11 @@ package com.gjh.shopdemo.template;
 import com.gjh.shopdemo.mapper.ProductMapper;
 import com.gjh.shopdemo.pojo.model.Product;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
 
 @Component
 public class ProductCacheTemplate extends CacheTemplate<Product> {
@@ -14,7 +17,7 @@ public class ProductCacheTemplate extends CacheTemplate<Product> {
     @Autowired
     private ProductMapper productMapper;
 
-    @Autowired
+    @Resource
     private RedisTemplate<String, Product> redisTemplate;
 
     @Override

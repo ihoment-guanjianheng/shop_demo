@@ -6,12 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
+
 @Component
 public class SkuCacheTemplate extends CacheTemplate<Sku> {
 
     private static final String KEY_PREFIX = "cache:sku:";
 
-    @Autowired
+    @Resource
     private RedisTemplate<String, Sku> redisTemplate;
 
     @Autowired

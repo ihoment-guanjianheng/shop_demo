@@ -1,5 +1,6 @@
 package com.gjh.shopdemo.strategy;
 
+import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.product.client.remote.client.SkuFeignRemoteClient;
 import com.gjh.shopdemo.product.client.remote.pojo.dto.SkuStockDTO;
@@ -36,7 +37,7 @@ public class ImmediateDeductStrategy implements StockStrategy {
         boolean success = deduct(skuId, quantity);
         if (success) {
             ShopResult<Void> dbResult = skuFeignClient.deductDbStock(skuId, quantity);
-            if (dbResult == null || dbResult.getCode() != 200) {
+            if (dbResult == null || dbResult.getCode() != 1) {
                 rollback(skuId, quantity);
                 return false;
             }
@@ -107,7 +108,10 @@ public class ImmediateDeductStrategy implements StockStrategy {
 
                     result = executeDeduct(key, quantity);
                     return result >= 0;
-                } finally {
+                } catch (Exception e){
+                    throw new BaseException("扣减库存失败,请稍后重试");
+                }
+                finally {
                     redisLockUtils.unlock(lockKey);
                 }
             } else {
