@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * 预占扣减策略：创建订单时预占库存，支付成功后异步确认扣减
  */
 @Component
-@ConditionalOnProperty(name = "stock.strategy", havingValue = "preoccupy")
+@ConditionalOnProperty(name = "stock.strategy", havingValue = "preoccupy", matchIfMissing = true)
 public class PreoccupyDeductStrategy implements StockStrategy {
 
     @Autowired

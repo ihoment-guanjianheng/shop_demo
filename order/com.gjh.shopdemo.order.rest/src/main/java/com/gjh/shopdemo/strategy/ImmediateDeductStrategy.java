@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * 立即扣减策略：创建订单时直接扣减库存，支付无需二次确认
  */
 @Component
-@ConditionalOnProperty(name = "stock.strategy", havingValue = "immediate", matchIfMissing = true)
+@ConditionalOnProperty(name = "stock.strategy", havingValue = "immediate")
 public class ImmediateDeductStrategy implements StockStrategy {
 
     @Autowired
