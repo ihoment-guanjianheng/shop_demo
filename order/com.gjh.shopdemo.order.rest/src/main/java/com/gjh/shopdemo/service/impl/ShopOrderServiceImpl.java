@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -41,13 +43,7 @@ import java.util.stream.Collectors;
 public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder> implements ShopOrderService {
 
     @Value("${order.expirationTime}")
-    private String expirationTime;
-
-    @Value("${stock.threshold}")
-    private String stockThreshold;
-
-    @Value("${product.cacheTTL}")
-    private String productCacheTTL;
+    private Long expirationTime;
 
     @Autowired
     private OrderItemService orderItemService;
@@ -117,7 +113,19 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
             orderItem.setOrderId(order.getId());
         }
         orderItemService.saveBatch(orderItems);
-
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronizationAdapter() {
+                    @Override
+                    public void afterCommit() {
+                        log.info("订单创建成功，发送延迟取消消息，orderNo: {}", order.getOrderNo());
+                        boolean result = stockStrategy.sendDelayOrderCreatedMessage(order, expirationTime);
+                        if(!result){
+                            log.error("发送延迟取消消息失败，orderNo: {}", order.getOrderNo());
+                            //TODO db补偿策略
+                        }
+                    }
+                }
+        );
         return order.getId();
     }
 

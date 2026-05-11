@@ -1,9 +1,11 @@
 package com.gjh.shopdemo.strategy;
 
 import com.gjh.shopdemo.pojo.exception.BaseException;
+import com.gjh.shopdemo.pojo.model.ShopOrder;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.product.client.remote.client.SkuFeignRemoteClient;
 import com.gjh.shopdemo.product.client.remote.pojo.vo.SkuStockVO;
+import com.gjh.shopdemo.util.MqMessageUtils;
 import com.gjh.shopdemo.util.RedisLockUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -26,6 +28,9 @@ public class ImmediateDeductStrategy implements StockStrategy {
 
     @Autowired
     private SkuFeignRemoteClient skuFeignClient;
+
+    @Autowired
+    private MqMessageUtils<ShopOrder> mqMessageUtils;
 
     @Autowired
     private RedisLockUtils redisLockUtils;
@@ -56,6 +61,11 @@ public class ImmediateDeductStrategy implements StockStrategy {
         rollback(skuId, quantity);
         skuFeignClient.addDbStock(skuId, quantity);
         return true;
+    }
+
+    @Override
+    public boolean sendDelayOrderCreatedMessage(ShopOrder shopOrder, Long delayTime) {
+        return mqMessageUtils.sendDelayMessage("order_create_delay", "order.create.delay", shopOrder.getId(), shopOrder, delayTime);
     }
 
 
@@ -108,10 +118,9 @@ public class ImmediateDeductStrategy implements StockStrategy {
 
                     result = executeDeduct(key, quantity);
                     return result >= 0;
-                } catch (Exception e){
+                } catch (Exception e) {
                     throw new BaseException("扣减库存失败,请稍后重试");
-                }
-                finally {
+                } finally {
                     redisLockUtils.unlock(lockKey);
                 }
             } else {

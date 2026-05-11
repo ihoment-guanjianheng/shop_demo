@@ -1,9 +1,11 @@
 package com.gjh.shopdemo.strategy;
 
 import com.gjh.shopdemo.pojo.exception.BaseException;
+import com.gjh.shopdemo.pojo.model.ShopOrder;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.product.client.remote.client.SkuFeignRemoteClient;
 import com.gjh.shopdemo.product.client.remote.pojo.vo.SkuStockVO;
+import com.gjh.shopdemo.util.MqMessageUtils;
 import com.gjh.shopdemo.util.RedisLockUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -30,6 +32,9 @@ public class PreoccupyDeductStrategy implements StockStrategy {
     @Autowired
     private RedisLockUtils redisLockUtils;
 
+    @Autowired
+    private MqMessageUtils<ShopOrder> mqMessageUtils;
+
     private static final String STOCK_KEY_PREFIX = "stock:sku:";
     private static final String LOCK_KEY_PREFIX = "lock:stock:sku:";
 
@@ -41,15 +46,15 @@ public class PreoccupyDeductStrategy implements StockStrategy {
      */
     private static final String PREOCCUPY_LUA =
             "local stockKey = KEYS[1] " +
-            "local lockKey = KEYS[2] " +
-            "local qty = tonumber(ARGV[1]) " +
-            "local stock = redis.call('get', stockKey) " +
-            "if stock == false then return -1 end " +
-            "local current = tonumber(stock) " +
-            "if current < qty then return -2 end " +
-            "redis.call('decrby', stockKey, qty) " +
-            "redis.call('incrby', lockKey, qty) " +
-            "return 1";
+                    "local lockKey = KEYS[2] " +
+                    "local qty = tonumber(ARGV[1]) " +
+                    "local stock = redis.call('get', stockKey) " +
+                    "if stock == false then return -1 end " +
+                    "local current = tonumber(stock) " +
+                    "if current < qty then return -2 end " +
+                    "redis.call('decrby', stockKey, qty) " +
+                    "redis.call('incrby', lockKey, qty) " +
+                    "return 1";
 
     /**
      * 确认扣减 Lua 脚本
@@ -59,11 +64,11 @@ public class PreoccupyDeductStrategy implements StockStrategy {
      */
     private static final String CONFIRM_LUA =
             "local lockKey = KEYS[1] " +
-            "local qty = tonumber(ARGV[1]) " +
-            "local locked = tonumber(redis.call('get', lockKey) or 0) " +
-            "if locked < qty then return -2 end " +
-            "redis.call('decrby', lockKey, qty) " +
-            "return 1";
+                    "local qty = tonumber(ARGV[1]) " +
+                    "local locked = tonumber(redis.call('get', lockKey) or 0) " +
+                    "if locked < qty then return -2 end " +
+                    "redis.call('decrby', lockKey, qty) " +
+                    "return 1";
 
     /**
      * 释放库存 Lua 脚本
@@ -73,11 +78,11 @@ public class PreoccupyDeductStrategy implements StockStrategy {
      */
     private static final String RELEASE_LUA =
             "local stockKey = KEYS[1] " +
-            "local lockKey = KEYS[2] " +
-            "local qty = tonumber(ARGV[1]) " +
-            "redis.call('incrby', stockKey, qty) " +
-            "redis.call('decrby', lockKey, qty) " +
-            "return 1";
+                    "local lockKey = KEYS[2] " +
+                    "local qty = tonumber(ARGV[1]) " +
+                    "redis.call('incrby', stockKey, qty) " +
+                    "redis.call('decrby', lockKey, qty) " +
+                    "return 1";
 
     @Override
     public boolean preoccupy(Long skuId, Integer quantity) {
@@ -120,8 +125,7 @@ public class PreoccupyDeductStrategy implements StockStrategy {
                     return result != null && result == 1;
                 } catch (Exception e) {
                     throw new BaseException("库存扣减失败，请稍后重试");
-                }
-                finally {
+                } finally {
                     redisLockUtils.unlock(initLockKey);
                 }
             } else {
@@ -168,5 +172,10 @@ public class PreoccupyDeductStrategy implements StockStrategy {
                 String.valueOf(quantity)
         );
         return result != null && result == 1;
+    }
+
+    @Override
+    public boolean sendDelayOrderCreatedMessage(ShopOrder shopOrder, Long delayTime) {
+        return mqMessageUtils.sendDelayMessage("order_create_delay", "order.create.delay", shopOrder.getId(), shopOrder, delayTime);
     }
 }

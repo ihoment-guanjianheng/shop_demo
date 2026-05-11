@@ -1,5 +1,7 @@
 package com.gjh.shopdemo.strategy;
 
+import com.gjh.shopdemo.pojo.model.ShopOrder;
+
 /**
  * 库存扣减策略接口
  */
@@ -31,4 +33,9 @@ public interface StockStrategy {
      * @return true: 成功
      */
     boolean release(Long skuId, Integer quantity);
+
+    /**
+     * 发送延迟消息, 订单创建时调用, 用于在订单超时未支付时释放库存
+     */
+    boolean sendDelayOrderCreatedMessage(ShopOrder shopOrder, Long delayTime);
 }
