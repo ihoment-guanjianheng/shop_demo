@@ -1,12 +1,15 @@
 package com.gjh.shopdemo.strategy;
 
 import com.gjh.shopdemo.pojo.exception.BaseException;
+import com.gjh.shopdemo.pojo.model.OrderItem;
 import com.gjh.shopdemo.pojo.model.ShopOrder;
+import com.gjh.shopdemo.pojo.mq.dto.StockUpdateMqDTO;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.product.client.remote.client.SkuFeignRemoteClient;
 import com.gjh.shopdemo.product.client.remote.pojo.vo.SkuStockVO;
 import com.gjh.shopdemo.util.MqMessageUtils;
 import com.gjh.shopdemo.util.RedisLockUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -14,11 +17,13 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
  * 预占扣减策略：创建订单时预占库存，支付成功后异步确认扣减
  */
+@Slf4j
 @Component
 @ConditionalOnProperty(name = "stock.strategy", havingValue = "preoccupy", matchIfMissing = true)
 public class PreoccupyDeductStrategy implements StockStrategy {
@@ -154,12 +159,22 @@ public class PreoccupyDeductStrategy implements StockStrategy {
                 Arrays.asList(lockKey),
                 String.valueOf(quantity)
         );
-        if (result == null || result != 1) {
-            return false;
+        return result != null && result == 1;
+    }
+
+    @Override
+    public void afterPayCommit(List<OrderItem> items) {
+        for (OrderItem item : items) {
+            StockUpdateMqDTO dto = new StockUpdateMqDTO(item.getSkuId(), item.getQuantity(), "confirm");
+            boolean ok = mqMessageUtils.sendOrderlyMessage(
+                    "order_create", "stock.confirm",
+                    item.getSkuId(), dto,
+                    String.valueOf(item.getSkuId())
+            );
+            if (!ok) {
+                log.error("发送库存确认消息失败，skuId={}, quantity={}", item.getSkuId(), item.getQuantity());
+            }
         }
-        // 异步扣减 DB 库存
-        ShopResult<Void> dbResult = skuFeignClient.deductDbStock(skuId, quantity);
-        return dbResult != null && dbResult.getCode() == 1;
     }
 
     @Override

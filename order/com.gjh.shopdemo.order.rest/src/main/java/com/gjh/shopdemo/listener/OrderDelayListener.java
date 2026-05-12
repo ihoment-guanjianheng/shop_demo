@@ -41,8 +41,11 @@ public class OrderDelayListener implements RocketMQListener<Message<ShopOrder>> 
                 return;
             }
             ShopOrder order = message.getPayload();
-            shopOrderService.cancelOrder(order.getId(), "超时未支付");
-            log.info("订单超时未支付，自动取消，orderNo: {}", order.getOrderNo());
+            order = shopOrderService.getById(order.getId());
+            if(order.getStatus().equals(0)) {
+                shopOrderService.cancelOrder(order.getId(), "超时未支付");
+                log.info("订单超时未支付，自动取消，orderNo: {}", order.getOrderNo());
+            }
         } catch (Exception e) {
             // 处理失败，重新入队
             log.error("处理延迟取消订单消息失败，重新入队，messageId: {}", message.getMessageId(), e);

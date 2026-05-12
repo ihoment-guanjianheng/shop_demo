@@ -53,6 +53,28 @@ public class MqMessageUtils<T> {
         return sendDelayMessage(topic, messageType, null, payload, delayTime);
     }
 
+    public <T> boolean sendOrderlyMessage(String topic, String messageType, Long aggregateId, T payload, String hashKey) {
+        Message<T> message = Message.<T>builder()
+                .messageId(UUID.randomUUID().toString())
+                .messageType(messageType)
+                .aggregateId(aggregateId)
+                .timestamp(System.currentTimeMillis())
+                .version(1)
+                .payload(payload)
+                .metadata(buildMetadata())
+                .build();
+
+        SendResult sendResult = rocketMQTemplate.syncSendOrderly(
+                topic,
+                MessageBuilder
+                        .withPayload(message)
+                        .setHeader("KEYS", message.getMessageId())
+                        .build(),
+                hashKey
+        );
+        return sendResult.getSendStatus() == SendStatus.SEND_OK;
+    }
+
     public <T> boolean sendDelayMessage(String topic, String messageType, Long aggregateId, T payload, Long delayTime) {
         Message<T> message = Message.<T>builder()
                 .messageId(UUID.randomUUID().toString())

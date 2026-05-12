@@ -1,6 +1,9 @@
 package com.gjh.shopdemo.strategy;
 
+import com.gjh.shopdemo.pojo.model.OrderItem;
 import com.gjh.shopdemo.pojo.model.ShopOrder;
+
+import java.util.List;
 
 /**
  * 库存扣减策略接口
@@ -38,4 +41,12 @@ public interface StockStrategy {
      * 发送延迟消息, 订单创建时调用, 用于在订单超时未支付时释放库存
      */
     boolean sendDelayOrderCreatedMessage(ShopOrder shopOrder, Long delayTime);
+
+    /**
+     * 支付成功事务提交后的后置动作（afterCommit 中调用）。
+     * 预占策略：通过 MQ 异步通知 Product 服务扣减 DB 库存。
+     * 立即扣减策略：无操作（DB 已在 preoccupy 时同步扣减）。
+     */
+    default void afterPayCommit(List<OrderItem> items) {
+    }
 }

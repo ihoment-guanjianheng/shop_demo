@@ -200,14 +200,31 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
             throw new BaseException("当前订单状态不允许支付");
         }
 
-        // 确认扣减库存
-        confirmOrderStock(id);
+        LambdaQueryWrapper<OrderItem> itemQuery = new LambdaQueryWrapper<>();
+        itemQuery.eq(OrderItem::getOrderId, id);
+        List<OrderItem> items = orderItemService.list(itemQuery);
+
+        for (OrderItem item : items) {
+            boolean success = stockStrategy.confirm(item.getSkuId(), item.getQuantity());
+            if (!success) {
+                throw new BaseException("库存确认失败，SKU ID: " + item.getSkuId());
+            }
+        }
 
         LambdaUpdateWrapper<ShopOrder> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(ShopOrder::getId, id)
                 .set(ShopOrder::getStatus, 1)
                 .set(ShopOrder::getPayTime, LocalDateTime.now());
         update(wrapper);
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronizationAdapter() {
+                    @Override
+                    public void afterCommit() {
+                        stockStrategy.afterPayCommit(items);
+                    }
+                }
+        );
     }
 
     @Override
@@ -244,15 +261,6 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
                 .set(ShopOrder::getReceiveTime, now)
                 .set(ShopOrder::getFinishTime, now);
         update(wrapper);
-    }
-
-    private void confirmOrderStock(Long orderId) {
-        LambdaQueryWrapper<OrderItem> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(OrderItem::getOrderId, orderId);
-        List<OrderItem> items = orderItemService.list(wrapper);
-        for (OrderItem item : items) {
-            stockStrategy.confirm(item.getSkuId(), item.getQuantity());
-        }
     }
 
     private void releaseOrderStock(Long orderId) {
