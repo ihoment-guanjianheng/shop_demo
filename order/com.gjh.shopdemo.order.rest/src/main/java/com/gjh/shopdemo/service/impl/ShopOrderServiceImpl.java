@@ -107,6 +107,7 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
         order.setStatus(0);
         order.setPayType(dto.getPayType());
         order.setRemark(dto.getRemark());
+        order.setExpireTime(LocalDateTime.now().plusSeconds(expirationTime / 1000));
         save(order);
 
         for (OrderItem orderItem : orderItems) {
@@ -119,9 +120,9 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
                     public void afterCommit() {
                         log.info("订单创建成功，发送延迟取消消息，orderNo: {}", order.getOrderNo());
                         boolean result = stockStrategy.sendDelayOrderCreatedMessage(order, expirationTime);
-                        if(!result){
-                            log.error("发送延迟取消消息失败，orderNo: {}", order.getOrderNo());
-                            //TODO db补偿策略
+                        if (!result) {
+                            // MQ 发送失败，由定时任务扫描 expire_time 兜底取消
+                            log.warn("延迟取消消息发送失败，将由定时任务兜底，orderNo: {}", order.getOrderNo());
                         }
                     }
                 }

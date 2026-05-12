@@ -31,6 +31,7 @@ public class ShopOrder implements Serializable {
     private LocalDateTime cancelTime;
     private String cancelReason;
     private String remark;
+    private LocalDateTime expireTime;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

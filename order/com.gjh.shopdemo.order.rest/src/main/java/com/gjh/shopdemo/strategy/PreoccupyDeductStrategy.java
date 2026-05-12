@@ -165,7 +165,7 @@ public class PreoccupyDeductStrategy implements StockStrategy {
     @Override
     public void afterPayCommit(List<OrderItem> items) {
         for (OrderItem item : items) {
-            StockUpdateMqDTO dto = new StockUpdateMqDTO(item.getSkuId(), item.getQuantity(), "confirm");
+            StockUpdateMqDTO dto = new StockUpdateMqDTO(item.getSkuId(), item.getQuantity());
             boolean ok = mqMessageUtils.sendOrderlyMessage(
                     "order_create", "stock.confirm",
                     item.getSkuId(), dto,
