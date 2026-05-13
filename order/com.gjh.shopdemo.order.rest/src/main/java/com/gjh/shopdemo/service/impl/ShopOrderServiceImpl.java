@@ -19,6 +19,7 @@ import com.gjh.shopdemo.pojo.vo.UserInfoVO;
 import com.gjh.shopdemo.service.OrderItemService;
 import com.gjh.shopdemo.service.ShopOrderService;
 import com.gjh.shopdemo.strategy.StockStrategy;
+import com.gjh.shopdemo.pojo.enums.OrderStatus;
 import com.gjh.shopdemo.util.UUIDUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -104,7 +105,7 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
         order.setDiscountAmount(discountAmount);
         order.setFreightAmount(freightAmount);
         order.setPayAmount(payAmount);
-        order.setStatus(0);
+        order.setStatus(OrderStatus.PENDING_PAYMENT.code);
         order.setPayType(dto.getPayType());
         order.setRemark(dto.getRemark());
         order.setExpireTime(LocalDateTime.now().plusSeconds(expirationTime / 1000));
@@ -175,16 +176,14 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
         if (order == null) {
             throw new BaseException("订单不存在");
         }
-        if (!Integer.valueOf(0).equals(order.getStatus())) {
-            throw new BaseException("当前订单状态不允许取消");
-        }
+        OrderStatus.of(order.getStatus()).checkTransition(OrderStatus.CANCELLED);
 
         // 释放库存
         releaseOrderStock(id);
 
         LambdaUpdateWrapper<ShopOrder> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(ShopOrder::getId, id)
-                .set(ShopOrder::getStatus, 4)
+                .set(ShopOrder::getStatus, OrderStatus.CANCELLED.code)
                 .set(ShopOrder::getCancelTime, LocalDateTime.now())
                 .set(ShopOrder::getCancelReason, reason);
         update(wrapper);
@@ -197,9 +196,7 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
         if (order == null) {
             throw new BaseException("订单不存在");
         }
-        if (!Integer.valueOf(0).equals(order.getStatus())) {
-            throw new BaseException("当前订单状态不允许支付");
-        }
+        OrderStatus.of(order.getStatus()).checkTransition(OrderStatus.PAID);
 
         LambdaQueryWrapper<OrderItem> itemQuery = new LambdaQueryWrapper<>();
         itemQuery.eq(OrderItem::getOrderId, id);
@@ -214,7 +211,7 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
 
         LambdaUpdateWrapper<ShopOrder> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(ShopOrder::getId, id)
-                .set(ShopOrder::getStatus, 1)
+                .set(ShopOrder::getStatus, OrderStatus.PAID.code)
                 .set(ShopOrder::getPayTime, LocalDateTime.now());
         update(wrapper);
 
@@ -235,12 +232,10 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
         if (order == null) {
             throw new BaseException("订单不存在");
         }
-        if (!Integer.valueOf(1).equals(order.getStatus())) {
-            throw new BaseException("当前订单状态不允许发货");
-        }
+        OrderStatus.of(order.getStatus()).checkTransition(OrderStatus.SHIPPED);
         LambdaUpdateWrapper<ShopOrder> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(ShopOrder::getId, id)
-                .set(ShopOrder::getStatus, 2)
+                .set(ShopOrder::getStatus, OrderStatus.SHIPPED.code)
                 .set(ShopOrder::getDeliveryTime, LocalDateTime.now());
         update(wrapper);
     }
@@ -252,13 +247,11 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
         if (order == null) {
             throw new BaseException("订单不存在");
         }
-        if (!Integer.valueOf(2).equals(order.getStatus())) {
-            throw new BaseException("当前订单状态不允许确认收货");
-        }
+        OrderStatus.of(order.getStatus()).checkTransition(OrderStatus.COMPLETED);
         LocalDateTime now = LocalDateTime.now();
         LambdaUpdateWrapper<ShopOrder> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(ShopOrder::getId, id)
-                .set(ShopOrder::getStatus, 3)
+                .set(ShopOrder::getStatus, OrderStatus.COMPLETED.code)
                 .set(ShopOrder::getReceiveTime, now)
                 .set(ShopOrder::getFinishTime, now);
         update(wrapper);
