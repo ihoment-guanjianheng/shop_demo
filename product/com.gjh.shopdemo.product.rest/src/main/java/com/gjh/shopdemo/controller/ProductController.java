@@ -1,6 +1,8 @@
 package com.gjh.shopdemo.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.gjh.shopdemo.oss.OssService;
+import com.gjh.shopdemo.oss.PresignVO;
 import com.gjh.shopdemo.pojo.dto.ProductAddDTO;
 import com.gjh.shopdemo.pojo.dto.ProductPageQueryDTO;
 import com.gjh.shopdemo.pojo.dto.ProductUpdateDTO;
@@ -27,8 +29,13 @@ import javax.validation.Valid;
 @RequestMapping
 public class ProductController{
 
+    private static final long PRESIGN_EXPIRES_SECONDS = 300L;
+
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private OssService ossService;
 
     /**
      * 新增商品
@@ -72,5 +79,21 @@ public class ProductController{
         dto.setId(id);
         productService.updateProduct(dto);
         return ShopResult.success();
+    }
+
+    /**
+     * 获取商品主图预签名 PUT URL
+     */
+    @GetMapping("/image/presign")
+    public ShopResult<PresignVO> imagePresign(@RequestParam String filename) {
+        return ShopResult.success(ossService.presign("products/images", filename, PRESIGN_EXPIRES_SECONDS));
+    }
+
+    /**
+     * 导出商品列表 Excel，文件上传 OSS 后返回公网下载链接
+     */
+    @GetMapping("/export")
+    public ShopResult<String> export() {
+        return ShopResult.success(productService.export());
     }
 }

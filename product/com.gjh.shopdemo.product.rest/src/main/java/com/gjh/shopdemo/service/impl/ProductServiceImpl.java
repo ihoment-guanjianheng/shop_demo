@@ -1,11 +1,13 @@
 package com.gjh.shopdemo.service.impl;
 
+import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gjh.shopdemo.constant.RedisConstant;
 import com.gjh.shopdemo.mapper.ProductMapper;
+import com.gjh.shopdemo.oss.OssService;
 import com.gjh.shopdemo.pojo.dto.ProductAddDTO;
 import com.gjh.shopdemo.pojo.dto.ProductPageQueryDTO;
 import com.gjh.shopdemo.pojo.dto.ProductUpdateDTO;
@@ -13,9 +15,11 @@ import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.model.Product;
 import com.gjh.shopdemo.pojo.model.Sku;
 import com.gjh.shopdemo.pojo.vo.ProductDetailVO;
+import com.gjh.shopdemo.pojo.vo.ProductExportVO;
 import com.gjh.shopdemo.service.ProductService;
 import com.gjh.shopdemo.service.SkuService;
 import com.gjh.shopdemo.util.RedisCacheUtils;
+import com.gjh.shopdemo.util.UUIDUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -25,8 +29,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
@@ -42,6 +49,11 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
     @Autowired
     private RedisCacheUtils redisCacheUtils;
+
+    @Autowired
+    private OssService ossService;
+
+    private static final long EXPORT_PRESIGN_EXPIRES_SECONDS = 3600L;
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -128,6 +140,25 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         }
         baseMapper.updateById(update);
         redisCacheUtils.delayDoubleDelete(RedisConstant.PRODUCT_DETAIL_KEY + product.getId());
+    }
 
+    @Override
+    public String export() {
+        List<Product> products = list();
+        List<ProductExportVO> rows = products.stream().map(p -> {
+            ProductExportVO vo = new ProductExportVO();
+            BeanUtils.copyProperties(p, vo);
+            vo.setStatus(Integer.valueOf(1).equals(p.getStatus()) ? "上架" : "下架");
+            vo.setCreateTime(p.getCreateTime() != null ? p.getCreateTime().toString() : "");
+            return vo;
+        }).collect(Collectors.toList());
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        EasyExcel.write(baos, ProductExportVO.class).sheet("商品列表").doWrite(rows);
+
+        String date = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String objectKey = "products/export/商品列表" + date + ".xlsx";
+        ossService.upload(objectKey, new ByteArrayInputStream(baos.toByteArray()));
+        return ossService.generatePresignedGetUrl(objectKey, EXPORT_PRESIGN_EXPIRES_SECONDS);
     }
 }

@@ -19,4 +19,6 @@ public interface ProductService extends IService<Product> {
     void updateStatus(Long id, Integer status);
 
     void updateProduct(ProductUpdateDTO dto);
+
+    String export();
 }

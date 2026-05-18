@@ -8,7 +8,6 @@ import javax.validation.constraints.Size;
 @Data
 public class ProductUpdateDTO {
 
-    @NotNull(message = "商品ID不能为空")
     private Long id;
 
     @Size(max = 64, message = "商品编码长度不能超过64")
