@@ -1,5 +1,7 @@
 package com.gjh.shopdemo.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.gjh.shopdemo.oss.OssService;
 import com.gjh.shopdemo.oss.PresignVO;
@@ -58,8 +60,16 @@ public class ProductController{
      * 查询商品详情
      */
     @GetMapping("/{id}")
+    @SentinelResource(value = "productDetail", blockHandler = "detailBlock")
     public ShopResult<ProductDetailVO> detail(@PathVariable Long id) {
         return ShopResult.success(productService.detail(id));
+    }
+
+    /**
+     * 商品详情限流/熔断兜底方法
+     */
+    public ShopResult<ProductDetailVO> detailBlock(Long id, BlockException e) {
+        return ShopResult.fail(429, "访问过于频繁,请稍后再试");
     }
 
     /**
