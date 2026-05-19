@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gjh.shopdemo.context.AuthContext;
 import com.gjh.shopdemo.mapper.ShopOrderMapper;
+import com.gjh.shopdemo.message.NotificationMessage;
 import com.gjh.shopdemo.pojo.dto.OrderCreateDTO;
 import com.gjh.shopdemo.pojo.dto.OrderCreateItemDTO;
 import com.gjh.shopdemo.pojo.dto.OrderPageQueryDTO;
@@ -20,6 +21,7 @@ import com.gjh.shopdemo.service.OrderItemService;
 import com.gjh.shopdemo.service.ShopOrderService;
 import com.gjh.shopdemo.strategy.StockStrategy;
 import com.gjh.shopdemo.pojo.enums.OrderStatus;
+import com.gjh.shopdemo.util.MqMessageUtils;
 import com.gjh.shopdemo.util.UUIDUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -35,6 +37,7 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,6 +54,12 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
 
     @Autowired
     private StockStrategy stockStrategy;
+
+    @Autowired
+    private MqMessageUtils mqMessageUtils;
+
+    @Value("${message.orderCreate.format}")
+    private String orderCreateMessageFormat;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -124,6 +133,22 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
                         if (!result) {
                             // MQ 发送失败，由定时任务扫描 expire_time 兜底取消
                             log.warn("延迟取消消息发送失败，将由定时任务兜底，orderNo: {}", order.getOrderNo());
+                        }
+
+                        String userLabel = currentUser.getNickname() != null
+                                ? currentUser.getNickname()
+                                : String.valueOf(currentUser.getId());
+                        NotificationMessage notification = NotificationMessage.builder()
+                                .eventType("order.created")
+                                .title("新订单通知")
+                                .content(String.format(orderCreateMessageFormat,
+                                        userLabel, order.getOrderNo(), order.getPayAmount()))
+                                .receivers(Collections.singletonList(currentUser.getEmail()))
+                                .build();
+                        boolean notifyResult = mqMessageUtils.sendMessage(
+                                "order_created_notification", "order.created", order.getId(), notification);
+                        if (!notifyResult) {
+                            log.warn("订单创建通知发送失败, orderNo={}", order.getOrderNo());
                         }
                     }
                 }
