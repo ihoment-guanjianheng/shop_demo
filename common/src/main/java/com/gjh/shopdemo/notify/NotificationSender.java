@@ -1,8 +1,8 @@
-package com.gjh.shopdemo.message;
+package com.gjh.shopdemo.notify;
 
 import java.util.List;
 
-public interface MessageSender {
+public interface NotificationSender {
 
     void send(String message, List<String> receivers);
 }

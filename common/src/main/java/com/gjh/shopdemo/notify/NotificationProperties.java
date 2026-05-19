@@ -1,4 +1,4 @@
-package com.gjh.shopdemo.message;
+package com.gjh.shopdemo.notify;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

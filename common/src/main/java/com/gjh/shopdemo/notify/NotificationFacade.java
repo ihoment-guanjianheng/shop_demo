@@ -1,4 +1,4 @@
-package com.gjh.shopdemo.message;
+package com.gjh.shopdemo.notify;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ public class NotificationFacade {
     private NotificationProperties notificationProperties;
 
     @Autowired
-    private MessageSenderFactory messageSenderFactory;
+    private NotificationSenderFactory notificationSenderFactory;
 
     /**
      * 发送通知：根据事件类型从 Nacos 配置中读取对应渠道，依次调用适配器
@@ -35,9 +35,9 @@ public class NotificationFacade {
         }
 
         for (String type : channelTypes) {
-            MessageSender sender = messageSenderFactory.getMessageSender(type);
+            NotificationSender sender = notificationSenderFactory.getMessageSender(type);
             if (sender == null) {
-                log.warn("未找到渠道 {} 对应的 MessageSender", type);
+                log.warn("未找到渠道 {} 对应的 NotificationSender", type);
                 continue;
             }
             try {

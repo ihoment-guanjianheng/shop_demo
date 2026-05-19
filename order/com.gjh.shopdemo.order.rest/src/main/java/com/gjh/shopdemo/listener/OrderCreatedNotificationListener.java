@@ -1,7 +1,7 @@
 package com.gjh.shopdemo.listener;
 
-import com.gjh.shopdemo.message.NotificationFacade;
-import com.gjh.shopdemo.message.NotificationMessage;
+import com.gjh.shopdemo.notify.NotificationFacade;
+import com.gjh.shopdemo.notify.NotificationMessage;
 import com.gjh.shopdemo.pojo.mq.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;

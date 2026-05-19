@@ -1,4 +1,4 @@
-package com.gjh.shopdemo.message;
+package com.gjh.shopdemo.notify;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

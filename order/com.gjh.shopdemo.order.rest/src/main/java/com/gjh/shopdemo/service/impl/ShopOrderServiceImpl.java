@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gjh.shopdemo.context.AuthContext;
 import com.gjh.shopdemo.mapper.ShopOrderMapper;
-import com.gjh.shopdemo.message.NotificationMessage;
+import com.gjh.shopdemo.notify.NotificationMessage;
 import com.gjh.shopdemo.pojo.dto.OrderCreateDTO;
 import com.gjh.shopdemo.pojo.dto.OrderCreateItemDTO;
 import com.gjh.shopdemo.pojo.dto.OrderPageQueryDTO;

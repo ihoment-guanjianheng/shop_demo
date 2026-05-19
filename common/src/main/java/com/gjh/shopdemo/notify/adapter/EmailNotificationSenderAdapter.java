@@ -1,8 +1,7 @@
-package com.gjh.shopdemo.message.adapter;
+package com.gjh.shopdemo.notify.adapter;
 
-import com.gjh.shopdemo.message.MessageSender;
+import com.gjh.shopdemo.notify.NotificationSender;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.mail.SimpleMailMessage;
@@ -15,7 +14,7 @@ import java.util.List;
 @Component("email")
 @ConditionalOnClass(name = "org.springframework.mail.javamail.JavaMailSender")
 @Slf4j
-public class EmailMessageSenderAdapter implements MessageSender {
+public class EmailNotificationSenderAdapter implements NotificationSender {
 
     @Resource
     private JavaMailSender mailSender;

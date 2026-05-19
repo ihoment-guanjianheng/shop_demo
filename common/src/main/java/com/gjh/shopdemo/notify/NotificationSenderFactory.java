@@ -1,4 +1,4 @@
-package com.gjh.shopdemo.message;
+package com.gjh.shopdemo.notify;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -6,12 +6,12 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 @Component
-public class MessageSenderFactory {
+public class NotificationSenderFactory {
 
     @Autowired
-    private Map<String, MessageSender> messageSenders;
+    private Map<String, NotificationSender> messageSenders;
 
-    public MessageSender getMessageSender(String type) {
+    public NotificationSender getMessageSender(String type) {
         return messageSenders.get(type);
     }
 }

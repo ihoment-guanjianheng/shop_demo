@@ -1,6 +1,6 @@
-package com.gjh.shopdemo.message.adapter;
+package com.gjh.shopdemo.notify.adapter;
 
-import com.gjh.shopdemo.message.MessageSender;
+import com.gjh.shopdemo.notify.NotificationSender;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -9,7 +9,7 @@ import java.util.List;
 
 @Component("sms")
 @Slf4j
-public class PhoneMessageSenderAdapter implements MessageSender {
+public class PhoneNotificationSenderAdapter implements NotificationSender {
 
     @Value("${notification.sms.accessKeyId:}")
     private String accessKeyId;

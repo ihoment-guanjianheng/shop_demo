@@ -1,10 +1,10 @@
-package com.gjh.shopdemo.message.adapter;
+package com.gjh.shopdemo.notify.adapter;
 
 import com.dingtalk.api.DefaultDingTalkClient;
 import com.dingtalk.api.DingTalkClient;
 import com.dingtalk.api.request.OapiRobotSendRequest;
 import com.dingtalk.api.response.OapiRobotSendResponse;
-import com.gjh.shopdemo.message.MessageSender;
+import com.gjh.shopdemo.notify.NotificationSender;
 import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.taobao.api.ApiException;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import java.util.List;
 
 @Component("dingtalk")
 @Slf4j
-public class DingTalkMessageSenderAdapter implements MessageSender {
+public class DingTalkNotificationSenderAdapter implements NotificationSender {
 
     @Value("${dingtalk.custom.robot.token}")
     private String CUSTOM_ROBOT_TOKEN ;
