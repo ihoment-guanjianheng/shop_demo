@@ -9,9 +9,9 @@ import java.util.Map;
 public class NotificationSenderFactory {
 
     @Autowired
-    private Map<String, NotificationSender> messageSenders;
+    private Map<String, NotificationSender> notificationSender;
 
-    public NotificationSender getMessageSender(String type) {
-        return messageSenders.get(type);
+    public NotificationSender getNotificationSender(String type) {
+        return notificationSender.get(type);
     }
 }

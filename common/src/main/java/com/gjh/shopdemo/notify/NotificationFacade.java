@@ -35,7 +35,7 @@ public class NotificationFacade {
         }
 
         for (String type : channelTypes) {
-            NotificationSender sender = notificationSenderFactory.getMessageSender(type);
+            NotificationSender sender = notificationSenderFactory.getNotificationSender(type);
             if (sender == null) {
                 log.warn("未找到渠道 {} 对应的 NotificationSender", type);
                 continue;
