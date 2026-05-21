@@ -2,7 +2,9 @@ package com.gjh.shopdemo.controller;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.gjh.shopdemo.context.AuthContext;
 import com.gjh.shopdemo.oss.OssService;
 import com.gjh.shopdemo.oss.PresignVO;
 import com.gjh.shopdemo.pojo.dto.ProductAddDTO;
@@ -11,6 +13,9 @@ import com.gjh.shopdemo.pojo.dto.ProductUpdateDTO;
 import com.gjh.shopdemo.pojo.model.Product;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.pojo.vo.ProductDetailVO;
+import com.gjh.shopdemo.pojo.vo.UserInfoVO;
+import com.gjh.shopdemo.product.client.remote.ProductFeignRemote;
+import com.gjh.shopdemo.product.client.remote.client.ProductFeignRemoteClient;
 import com.gjh.shopdemo.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,13 +28,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 商品管理接口
  */
 @RestController
 @RequestMapping
-public class ProductController{
+public class ProductController implements ProductFeignRemote {
 
     private static final long PRESIGN_EXPIRES_SECONDS = 300L;
 
@@ -46,6 +53,33 @@ public class ProductController{
     public ShopResult<Void> add(@Valid @RequestBody ProductAddDTO dto) {
         productService.addProduct(dto);
         return ShopResult.success();
+    }
+
+    /**
+     * 查询当前用户的所有商品ID列表
+     */
+    @GetMapping("/myIds")
+    public ShopResult<List<Long>> getMyProductIds() {
+        UserInfoVO currentUser = AuthContext.getCurrentUser();
+        if (currentUser == null || currentUser.getId() == null) {
+            return ShopResult.success(java.util.Collections.emptyList());
+        }
+        LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Product::getUserId, currentUser.getId());
+        List<Long> ids = productService.list(wrapper).stream().map(Product::getId).collect(Collectors.toList());
+        return ShopResult.success(ids);
+    }
+
+    /**
+     * 分页查询当前用户的商品列表
+     */
+    @GetMapping("/myPage")
+    public ShopResult<IPage<Product>> myPage(ProductPageQueryDTO dto) {
+        UserInfoVO currentUser = AuthContext.getCurrentUser();
+        if (currentUser != null && currentUser.getId() != null) {
+            dto.setUserId(currentUser.getId());
+        }
+        return ShopResult.success(productService.pageQuery(dto));
     }
 
     /**

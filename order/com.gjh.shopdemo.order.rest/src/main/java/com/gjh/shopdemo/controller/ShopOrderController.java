@@ -54,10 +54,14 @@ public class ShopOrderController {
     }
 
     /**
-     * 分页查询所有订单列表
+     * 分页查询本店订单列表（当前用户发布的商品被购买的订单）
      */
     @GetMapping("/page")
     public ShopResult<IPage<ShopOrder>> page(OrderPageQueryDTO dto) {
+        UserInfoVO currentUser = AuthContext.getCurrentUser();
+        if (currentUser != null && currentUser.getId() != null) {
+            dto.setSellerId(currentUser.getId());
+        }
         return ShopResult.success(shopOrderService.pageQuery(dto));
     }
 

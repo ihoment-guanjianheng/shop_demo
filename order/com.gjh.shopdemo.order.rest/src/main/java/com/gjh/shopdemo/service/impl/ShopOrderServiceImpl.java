@@ -13,14 +13,16 @@ import com.gjh.shopdemo.pojo.dto.OrderCreateItemDTO;
 import com.gjh.shopdemo.pojo.dto.OrderPageQueryDTO;
 import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.model.OrderItem;
+import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.pojo.model.ShopOrder;
 import com.gjh.shopdemo.pojo.vo.OrderDetailVO;
 import com.gjh.shopdemo.pojo.vo.OrderItemVO;
 import com.gjh.shopdemo.pojo.vo.UserInfoVO;
+import com.gjh.shopdemo.pojo.enums.OrderStatus;
+import com.gjh.shopdemo.product.client.remote.ProductFeignRemote;
 import com.gjh.shopdemo.service.OrderItemService;
 import com.gjh.shopdemo.service.ShopOrderService;
 import com.gjh.shopdemo.strategy.StockStrategy;
-import com.gjh.shopdemo.pojo.enums.OrderStatus;
 import com.gjh.shopdemo.util.MqMessageUtils;
 import com.gjh.shopdemo.util.UUIDUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +53,9 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
 
     @Autowired
     private OrderItemService orderItemService;
+
+    @Autowired
+    private ProductFeignRemote productFeignRemote;
 
     @Autowired
     private StockStrategy stockStrategy;
@@ -162,6 +167,23 @@ public class ShopOrderServiceImpl extends ServiceImpl<ShopOrderMapper, ShopOrder
         LambdaQueryWrapper<ShopOrder> wrapper = new LambdaQueryWrapper<>();
         if (dto.getUserId() != null) {
             wrapper.eq(ShopOrder::getUserId, dto.getUserId());
+        }
+        if (dto.getSellerId() != null) {
+            ShopResult<List<Long>> result = productFeignRemote.getMyProductIds();
+            List<Long> productIds = result != null ? result.getData() : null;
+            if (productIds == null || productIds.isEmpty()) {
+                wrapper.eq(ShopOrder::getId, -1L);
+            } else {
+                LambdaQueryWrapper<OrderItem> itemWrapper = new LambdaQueryWrapper<>();
+                itemWrapper.in(OrderItem::getProductId, productIds);
+                List<Long> orderIds = orderItemService.list(itemWrapper)
+                        .stream().map(OrderItem::getOrderId).distinct().collect(Collectors.toList());
+                if (orderIds.isEmpty()) {
+                    wrapper.eq(ShopOrder::getId, -1L);
+                } else {
+                    wrapper.in(ShopOrder::getId, orderIds);
+                }
+            }
         }
         if (dto.getStatus() != null) {
             wrapper.eq(ShopOrder::getStatus, dto.getStatus());

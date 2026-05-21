@@ -6,6 +6,7 @@ import lombok.Data;
 public class OrderPageQueryDTO {
 
     private Long userId;
+    private Long sellerId;
 
     private Integer status;
 

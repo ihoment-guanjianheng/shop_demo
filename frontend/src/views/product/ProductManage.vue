@@ -59,7 +59,7 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getProductPage, updateProductStatus, exportProduct } from '../../api/product'
+import { getMyProductPage, updateProductStatus, exportProduct } from '../../api/product'
 
 const list = ref([])
 const total = ref(0)
@@ -73,7 +73,7 @@ const query = reactive({
 async function loadData() {
   loading.value = true
   try {
-    const res = await getProductPage(query)
+    const res = await getMyProductPage(query)
     list.value = res.records || []
     total.value = res.total || 0
   } finally {

@@ -73,7 +73,8 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     @Override
     public IPage<Product> pageQuery(ProductPageQueryDTO dto) {
         LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
-        wrapper.like(StringUtils.isNotBlank(dto.getProductName()), Product::getProductName, dto.getProductName())
+        wrapper.eq(dto.getUserId() != null, Product::getUserId, dto.getUserId())
+                .like(StringUtils.isNotBlank(dto.getProductName()), Product::getProductName, dto.getProductName())
                 .eq(dto.getStatus() != null, Product::getStatus, dto.getStatus())
                 .orderByDesc(Product::getCreateTime);
         return page(new Page<>(dto.getCurrent(), dto.getSize()), wrapper);

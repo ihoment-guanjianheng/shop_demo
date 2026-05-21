@@ -5,6 +5,10 @@ export function getProductPage(params) {
   return request.get('/product/page', { params })
 }
 
+export function getMyProductPage(params) {
+  return request.get('/product/myPage', { params })
+}
+
 export function getProductDetail(id) {
   return request.get(`/product/${id}`)
 }
