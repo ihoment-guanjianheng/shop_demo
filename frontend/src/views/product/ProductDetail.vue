@@ -39,7 +39,7 @@
       </el-col>
     </el-row>
 
-    <el-card style="margin-top: 24px;" v-if="product">
+    <el-card style="margin-top: 24px;" v-if="product && isOwner">
       <template #header>
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span>SKU 列表</span>
@@ -140,10 +140,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getProductDetail, addSku, updateSku, deleteSku, updateSkuStock, getImagePresign, uploadToPresign } from '../../api/product'
 import { useCartStore } from '../../stores/cart'
+import { useUserStore } from '../../stores/user'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+const userStore = useUserStore()
+
+const isOwner = computed(() => {
+  return product.value?.userId === userStore.userInfo.id
+})
 
 const product = ref(null)
 const loading = ref(false)

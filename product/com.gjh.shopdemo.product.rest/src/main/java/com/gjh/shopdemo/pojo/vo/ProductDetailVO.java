@@ -19,6 +19,7 @@ public class ProductDetailVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
+    private Long userId;
     private String productCode;
     private String productName;
     private String description;

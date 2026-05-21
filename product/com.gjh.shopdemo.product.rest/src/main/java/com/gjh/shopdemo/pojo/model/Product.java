@@ -17,6 +17,7 @@ public class Product implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+    private Long userId;
     private String productCode;
     private String productName;
     private String description;

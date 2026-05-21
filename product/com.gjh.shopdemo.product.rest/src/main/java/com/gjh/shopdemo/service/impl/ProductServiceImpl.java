@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gjh.shopdemo.constant.RedisConstant;
+import com.gjh.shopdemo.context.AuthContext;
 import com.gjh.shopdemo.mapper.ProductMapper;
 import com.gjh.shopdemo.oss.OssService;
 import com.gjh.shopdemo.pojo.dto.ProductAddDTO;
@@ -16,6 +17,7 @@ import com.gjh.shopdemo.pojo.model.Product;
 import com.gjh.shopdemo.pojo.model.Sku;
 import com.gjh.shopdemo.pojo.vo.ProductDetailVO;
 import com.gjh.shopdemo.pojo.vo.ProductExportVO;
+import com.gjh.shopdemo.pojo.vo.UserInfoVO;
 import com.gjh.shopdemo.service.ProductService;
 import com.gjh.shopdemo.service.SkuService;
 import com.gjh.shopdemo.util.RedisCacheUtils;
@@ -61,6 +63,10 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     public void addProduct(ProductAddDTO dto) {
         Product product = new Product();
         BeanUtils.copyProperties(dto, product);
+        UserInfoVO currentUser = AuthContext.getCurrentUser();
+        if (currentUser != null && currentUser.getId() != null) {
+            product.setUserId(currentUser.getId());
+        }
         baseMapper.insert(product);
     }
 

@@ -56,11 +56,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         BeanUtils.copyProperties(dto, user);
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setStatus(1);
+        save(user);
         UserRole userRole = new UserRole();
         userRole.setUserId(user.getId());
         // 设置默认角色为普通用户
         userRole.setRoleId(2L);
-        save(user);
         userRoleMapper.insert(userRole);
     }
 
