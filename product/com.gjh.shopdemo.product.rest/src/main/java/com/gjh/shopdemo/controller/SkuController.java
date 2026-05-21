@@ -11,6 +11,7 @@ import com.gjh.shopdemo.product.client.remote.SkuFeignRemote;
 import com.gjh.shopdemo.product.client.remote.pojo.vo.SkuStockVO;
 import com.gjh.shopdemo.service.SkuService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -77,6 +78,15 @@ public class SkuController implements SkuFeignRemote {
     public ShopResult<Void> update(@PathVariable Long id, @Valid @RequestBody SkuUpdateDTO dto) {
         dto.setId(id);
         skuService.updateSku(dto);
+        return ShopResult.success();
+    }
+
+    /**
+     * 删除SKU
+     */
+    @DeleteMapping("/{id}")
+    public ShopResult<Void> delete(@PathVariable Long id) {
+        skuService.deleteSku(id);
         return ShopResult.success();
     }
 

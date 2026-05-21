@@ -23,4 +23,6 @@ public interface SkuService extends IService<Sku> {
     void deductDbStock(Long id, Integer quantity);
 
     void addDbStock(Long id, Integer quantity);
+
+    void deleteSku(Long id);
 }

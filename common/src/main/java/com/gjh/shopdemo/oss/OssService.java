@@ -32,11 +32,14 @@ public class OssService {
      * 生成预签名 PUT URL，供前端直接上传文件到 OSS，有效期 expiresSeconds 秒
      * contentType 不为空时会纳入签名，客户端 PUT 时必须携带相同的 Content-Type
      */
-    public String generatePresignedPutUrl(String objectKey, long expiresSeconds) {
+    public String generatePresignedPutUrl(String objectKey, String contentType, long expiresSeconds) {
         Date expiration = new Date(System.currentTimeMillis() + expiresSeconds * 1000L);
         GeneratePresignedUrlRequest request =
                 new GeneratePresignedUrlRequest(bucket, objectKey, HttpMethod.PUT);
         request.setExpiration(expiration);
+        if (contentType != null && !contentType.isEmpty()) {
+            request.setContentType(contentType);
+        }
         URL url = ossClient.generatePresignedUrl(request);
         return url.toString();
     }
@@ -74,7 +77,7 @@ public class OssService {
         String objectKey = directory + "/" + UUIDUtils.getUUID() + ext;
         String contentType = resolveContentType(ext);
         return new PresignVO(
-                generatePresignedPutUrl(objectKey, expiresSeconds),
+                generatePresignedPutUrl(objectKey, contentType, expiresSeconds),
                 getPublicUrl(objectKey),
                 contentType
         );

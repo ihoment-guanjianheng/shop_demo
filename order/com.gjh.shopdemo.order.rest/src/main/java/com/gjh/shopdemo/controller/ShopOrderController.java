@@ -2,11 +2,13 @@ package com.gjh.shopdemo.controller;
 
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.gjh.shopdemo.context.AuthContext;
 import com.gjh.shopdemo.pojo.dto.OrderCreateDTO;
 import com.gjh.shopdemo.pojo.dto.OrderPageQueryDTO;
 import com.gjh.shopdemo.pojo.model.ShopOrder;
 import com.gjh.shopdemo.pojo.result.ShopResult;
 import com.gjh.shopdemo.pojo.vo.OrderDetailVO;
+import com.gjh.shopdemo.pojo.vo.UserInfoVO;
 import com.gjh.shopdemo.service.ShopOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,7 +42,19 @@ public class ShopOrderController {
     }
 
     /**
-     * 分页查询订单列表
+     * 分页查询当前用户的订单列表
+     */
+    @GetMapping("/myPage")
+    public ShopResult<IPage<ShopOrder>> myPage(OrderPageQueryDTO dto) {
+        UserInfoVO currentUser = AuthContext.getCurrentUser();
+        if (currentUser != null && currentUser.getId() != null) {
+            dto.setUserId(currentUser.getId());
+        }
+        return ShopResult.success(shopOrderService.pageQuery(dto));
+    }
+
+    /**
+     * 分页查询所有订单列表
      */
     @GetMapping("/page")
     public ShopResult<IPage<ShopOrder>> page(OrderPageQueryDTO dto) {

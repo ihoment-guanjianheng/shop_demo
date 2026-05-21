@@ -171,6 +171,17 @@ public class SkuServiceImpl extends ServiceImpl<SkuMapper, Sku> implements SkuSe
 
     @Transactional(rollbackFor = Exception.class)
     @Override
+    public void deleteSku(Long id) {
+        Sku sku = baseMapper.selectById(id);
+        if (sku == null) {
+            throw new BaseException("SKU不存在");
+        }
+        removeById(id);
+        redisCacheUtils.delayDoubleDelete(RedisConstant.PRODUCT_DETAIL_KEY + sku.getProductId());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
     public void addDbStock(Long id, Integer quantity) {
         Sku sku = baseMapper.selectById(id);
         if (sku == null) {
