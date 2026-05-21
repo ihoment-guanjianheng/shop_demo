@@ -3,10 +3,12 @@ package com.gjh.shopdemo.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gjh.shopdemo.constant.RedisConstant;
 import com.gjh.shopdemo.mapper.UserMapper;
+import com.gjh.shopdemo.mapper.UserRoleMapper;
 import com.gjh.shopdemo.pojo.dto.UserLoginDTO;
 import com.gjh.shopdemo.pojo.dto.UserRegisterDTO;
 import com.gjh.shopdemo.pojo.exception.BaseException;
 import com.gjh.shopdemo.pojo.model.User;
+import com.gjh.shopdemo.pojo.model.UserRole;
 import com.gjh.shopdemo.pojo.vo.UserInfoVO;
 import com.gjh.shopdemo.pojo.vo.UserVO;
 import com.gjh.shopdemo.service.PermissionCacheService;
@@ -19,6 +21,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -37,9 +40,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Autowired
     private PermissionCacheService permissionCacheService;
 
+    @Autowired
+    private UserRoleMapper userRoleMapper;
+
     private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
 
     @Override
+    @Transactional
     public void register(UserRegisterDTO dto) {
         long count = lambdaQuery().eq(User::getUsername, dto.getUsername()).count();
         if (count > 0) {
@@ -49,7 +56,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         BeanUtils.copyProperties(dto, user);
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setStatus(1);
+        UserRole userRole = new UserRole();
+        userRole.setUserId(user.getId());
+        // 设置默认角色为普通用户
+        userRole.setRoleId(2L);
         save(user);
+        userRoleMapper.insert(userRole);
     }
 
     @Override
