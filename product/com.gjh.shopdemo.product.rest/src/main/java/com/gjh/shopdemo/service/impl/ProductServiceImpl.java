@@ -28,6 +28,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
 
     @Autowired
@@ -85,16 +87,31 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         String key = RedisConstant.PRODUCT_DETAIL_KEY + id;
         // 缓存有效期随机加一些时间，防止缓存雪崩
         long ttl = cacheTTL + RandomUtils.nextLong(0, 60);
-        ProductDetailVO vo = (ProductDetailVO) redisTemplate.opsForValue().get(key);
-        if (vo != null) {
-            // 缓存存在，更新缓存有效期，防止缓存击穿
-            redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
-            return vo;
+        ProductDetailVO vo = null;
+        boolean redisAvailable = true;
+
+        try {
+            vo = (ProductDetailVO) redisTemplate.opsForValue().get(key);
+            if (vo != null) {
+                // 缓存存在，更新缓存有效期，防止缓存击穿
+                redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
+                return vo;
+            }
+        } catch (Exception e) {
+            log.warn("Redis 读取失败，降级到数据库查询, productId={}", id, e);
+            redisAvailable = false;
         }
+
         Product product = baseMapper.selectById(id);
         if (product == null) {
-            // 商品不存在，设置缓存为空，防止内存穿透
-            redisTemplate.opsForValue().set(key, null, ttl, TimeUnit.SECONDS);
+            if (redisAvailable) {
+                try {
+                    // 商品不存在，设置缓存为空，防止内存穿透
+                    redisTemplate.opsForValue().set(key, null, ttl, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    log.warn("Redis 写入空值失败, productId={}", id, e);
+                }
+            }
             throw new BaseException("商品不存在");
         }
         vo = new ProductDetailVO();
@@ -104,7 +121,14 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         skuWrapper.eq(Sku::getProductId, id).orderByAsc(Sku::getId);
         List<Sku> skuList = skuService.list(skuWrapper);
         vo.setSkuList(skuList);
-        redisTemplate.opsForValue().set(key, vo, ttl, TimeUnit.SECONDS);
+
+        if (redisAvailable) {
+            try {
+                redisTemplate.opsForValue().set(key, vo, ttl, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.warn("Redis 写入缓存失败, productId={}", id, e);
+            }
+        }
         return vo;
     }
 

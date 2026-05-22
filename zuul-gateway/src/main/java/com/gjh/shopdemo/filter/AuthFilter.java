@@ -79,8 +79,14 @@ public class AuthFilter extends ZuulFilter {
         String token = authHeader.substring(BEARER_PREFIX.length());
 
         // 校验黑名单（由 user-auth 服务在登出时写入）
-        if (stringRedisTemplate.hasKey(TOKEN_BLACKLIST_PREFIX + token)) {
-            rejectRequest(ctx, HttpServletResponse.SC_UNAUTHORIZED, "令牌已失效，请重新登录");
+        try {
+            if (stringRedisTemplate.hasKey(TOKEN_BLACKLIST_PREFIX + token)) {
+                rejectRequest(ctx, HttpServletResponse.SC_UNAUTHORIZED, "令牌已失效，请重新登录");
+                return null;
+            }
+        } catch (Exception e) {
+            log.warn("Redis 黑名单检查失败，拒绝请求以保障安全", e);
+            rejectRequest(ctx, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "鉴权服务暂不可用");
             return null;
         }
 
@@ -112,7 +118,14 @@ public class AuthFilter extends ZuulFilter {
     private boolean checkPermission(Long userId, String uri) {
         RequestContext ctx = RequestContext.getCurrentContext();
         String key = RedisConstant.PERMISSION_USER_PREFIX + userId;
-        Object value = redisTemplate.opsForValue().get(key);
+        Object value;
+        try {
+            value = redisTemplate.opsForValue().get(key);
+        } catch (Exception e) {
+            log.warn("Redis 权限缓存读取失败，拒绝请求", e);
+            rejectRequest(ctx, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "鉴权服务暂不可用");
+            return false;
+        }
 
         if (value == null) {
             rejectRequest(ctx, HttpServletResponse.SC_UNAUTHORIZED, "权限缓存已过期，请重新登录");

@@ -3,6 +3,7 @@ package com.gjh.shopdemo.filter;
 import com.gjh.shopdemo.constant.RedisConstant;
 import com.gjh.shopdemo.context.AuthContext;
 import com.gjh.shopdemo.pojo.vo.UserInfoVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 @Component
+@Slf4j
 public class TokenFilter implements Filter {
 
     @Autowired
@@ -30,8 +32,12 @@ public class TokenFilter implements Filter {
         String userId = req.getHeader(X_USER_ID_HEADER);
         if (userId != null && !userId.isEmpty()) {
             String key = RedisConstant.TOKEN_PREFIX + userId;
-            UserInfoVO userInfo = (UserInfoVO) redisTemplate.opsForValue().get(key);
-            AuthContext.setCurrentUser(userInfo);
+            try {
+                UserInfoVO userInfo = (UserInfoVO) redisTemplate.opsForValue().get(key);
+                AuthContext.setCurrentUser(userInfo);
+            } catch (Exception e) {
+                log.warn("Redis 读取用户信息失败，继续执行请求但不设置当前用户, userId={}", userId, e);
+            }
         }
         try {
             chain.doFilter(request, response);
