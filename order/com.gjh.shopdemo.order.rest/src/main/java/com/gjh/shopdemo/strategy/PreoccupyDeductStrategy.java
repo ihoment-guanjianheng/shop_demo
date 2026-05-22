@@ -166,13 +166,33 @@ public class PreoccupyDeductStrategy implements StockStrategy {
     public void afterPayCommit(List<OrderItem> items) {
         for (OrderItem item : items) {
             StockUpdateMqDTO dto = new StockUpdateMqDTO(item.getSkuId(), item.getQuantity());
-            boolean ok = mqMessageUtils.sendOrderlyMessage(
-                    "order_create", "stock.confirm",
-                    item.getSkuId(), dto,
-                    String.valueOf(item.getSkuId())
-            );
-            if (!ok) {
-                log.error("发送库存确认消息失败，skuId={}, quantity={}", item.getSkuId(), item.getQuantity());
+            boolean sent = false;
+            int retries = 3;
+            for (int i = 0; i < retries; i++) {
+                try {
+                    boolean ok = mqMessageUtils.sendOrderlyMessage(
+                            "order_create", "stock.confirm",
+                            item.getSkuId(), dto,
+                            String.valueOf(item.getSkuId())
+                    );
+                    if (ok) {
+                        sent = true;
+                        break;
+                    }
+                    log.warn("库存确认消息发送未返回 OK，第 {} 次重试，skuId={}", i + 1, item.getSkuId());
+                } catch (Exception e) {
+                    log.warn("库存确认消息发送异常，第 {} 次重试，skuId={}", i + 1, item.getSkuId(), e);
+                }
+                try {
+                    Thread.sleep(100L * (i + 1));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            if (!sent) {
+                log.error("库存确认消息发送最终失败，skuId={}, quantity={}，将导致 DB 库存未扣减",
+                        item.getSkuId(), item.getQuantity());
             }
         }
     }

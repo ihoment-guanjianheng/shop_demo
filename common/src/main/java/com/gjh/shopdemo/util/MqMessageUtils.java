@@ -2,6 +2,7 @@ package com.gjh.shopdemo.util;
 
 import com.gjh.shopdemo.context.AuthContext;
 import com.gjh.shopdemo.pojo.mq.Message;
+import com.gjh.shopdemo.pojo.vo.UserInfoVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
@@ -98,9 +99,11 @@ public class MqMessageUtils<T> {
 
     private Map<String, String> buildMetadata() {
         Map<String, String> meta = new HashMap<>();
-        // 注入 SkyWalking / Sleuth traceId
         meta.put("traceId", MDC.get("traceId"));
-        meta.put("userId", AuthContext.getCurrentUser().getId().toString());
+        UserInfoVO user = AuthContext.getCurrentUser();
+        if (user != null && user.getId() != null) {
+            meta.put("userId", user.getId().toString());
+        }
         return meta;
     }
 }
